@@ -2,202 +2,84 @@
 
 ---
 
-# VRChat VPM Package Template for KIBALAB
+# GUIElement
 
-VRChat Creator Companion(VCC) / VRChat Package Manager(VPM) 패키지 배포를 위한 템플릿입니다.
+GUIElement는 Unity Editor 확장 도구에서 재사용하기 위한 작은 IMGUI 유틸리티 패키지입니다.
 
-**태그(릴리스)를 푸시하면** GitHub Actions가 자동으로:
-1. Release 생성 (zip + unitypackage + package.json)
-2. VPM 백엔드에 패키지 정보 등록
-3. 즉시 [vpm.kiba.red](https://vpm.kiba.red)에 반영
+현재 배포판은 에디터 전용 배열 재정렬 UI를 제공합니다.
 
----
+- `ReorderableListView`: 커스텀 IMGUI 리스트에서 드래그 앤 드롭 재정렬을 처리합니다.
+- `SerializedArrayReorder`: `SerializedProperty` 배열 이동을 Undo/Dirty 처리와 함께 적용합니다.
+- `DragHandleGUI`: 리스트 항목의 드래그 핸들을 그립니다.
 
-## 요구 사항
+## 설치
 
-### 1) 패키지 구조 (UPM/VPM 표준)
+VPM/VCC 저장소에 이 패키지가 등록된 뒤 VCC에서 설치합니다.
 
-```
-Packages/<PACKAGE_ID>/
-├── package.json
-├── Runtime/
-├── Editor/
-└── package-media/        # (선택) 썸네일 이미지
-    └── thumbnail.png
+직접 Unity 프로젝트에 임베드하려면 이 저장소의 패키지 폴더를 복사합니다.
+
+```text
+Packages/com.kibalab.guielement
 ```
 
-예시:
-```
-Packages/com.kibalab.mypackage/package.json
-```
+## 빠른 사용 예시
 
-### 2) package.json 필수 필드
+```csharp
+using KIBA_.GUIElement.Reorder.Editor;
+using UnityEditor;
+using UnityEngine;
 
-```json
+public sealed class ExampleWindow : EditorWindow
 {
-  "name": "com.kibalab.mypackage",
-  "displayName": "My Package",
-  "version": "1.0.0",
-  "description": "패키지 설명",
-  "author": {
-    "name": "Your Name",
-    "email": "your@email.com",
-    "url": "https://your-site.com"
-  },
-  "vpmDependencies": {
-    "com.vrchat.worlds": "3.x.x"
-  }
+    private readonly ReorderableListView _listView = new ReorderableListView("example-list");
+
+    private void OnGUI()
+    {
+        _listView.ClearItemRects();
+
+        for (var i = 0; i < 3; i++)
+        {
+            var row = EditorGUILayout.GetControlRect(false, EditorGUIUtility.singleLineHeight);
+            _listView.AddItemRect(row);
+
+            var handle = new Rect(row.x, row.y, 18f, row.height);
+            if (DragHandleGUI.Draw(handle))
+            {
+                _listView.BeginReorderDrag(i);
+            }
+
+            EditorGUI.LabelField(new Rect(row.x + 22f, row.y, row.width - 22f, row.height), $"Item {i}");
+        }
+
+        _listView.DrawTailDropZone();
+        _listView.HandleDragAndDrop((from, to) => Debug.Log($"Move {from} to {to}"));
+    }
 }
 ```
 
----
+## 배포 설정
 
-## 설정 방법
+이 저장소는 KIBALAB VPM 패키지 템플릿의 릴리스 워크플로우를 사용합니다.
 
-### 1) Repository Variables
+릴리스 전에 GitHub 저장소 설정에서 다음 값을 확인하세요.
 
-GitHub 저장소 → **Settings** → **Secrets and variables** → **Actions** → **Variables**
+| 항목 | 값 |
+| --- | --- |
+| Repository Variable `PACKAGE_NAME` | `com.kibalab.guielement` |
+| Repository Variable `VPM_BACKEND_URL` | `https://vpm.kiba.red` |
+| Repository Secret `VPM_API_KEY` | VPM 백엔드 API 키 |
 
-| Variable | 설명 | 예시 |
-|----------|------|------|
-| `PACKAGE_NAME` | 패키지 폴더 이름 | `com.kibalab.mypackage` |
-| `VPM_BACKEND_URL` | VPM 백엔드 URL | `https://vpm.kiba.red` |
+`release.yml`은 `PACKAGE_NAME`이 없을 때도 `com.kibalab.guielement`를 기본값으로 사용합니다.
 
-### 2) Repository Secrets
+## 릴리스
 
-GitHub 저장소 → **Settings** → **Secrets and variables** → **Actions** → **Secrets**
-
-| Secret | 설명 |
-|--------|------|
-| `VPM_API_KEY` | VPM 백엔드 API 키 (관리자에게 문의) |
-
----
-
-## 사용 방법
-
-### 새 패키지 생성
-
-1. **Use this template**로 새 저장소 생성
-2. `Packages/` 폴더 아래에 패키지 ID로 폴더 생성
-3. `package.json` 작성
-4. Repository Variables/Secrets 설정
-
-### 릴리스 배포
-
-1. `package.json`의 `version` 업데이트
-2. 커밋 & 푸시
-3. 같은 버전으로 태그 생성 & 푸시
+`package.json`의 `version`과 Git 태그가 일치해야 합니다.
 
 ```bash
-# 버전 업데이트 후 커밋
-git add Packages/com.kibalab.mypackage/package.json
-git commit -m "Bump version to 1.0.1"
-git push
-
-# 태그 생성 및 푸시
-git tag 1.0.1
-git push origin 1.0.1
+git tag 0.1.0
+git push origin 0.1.0
 ```
 
-> 태그 버전과 package.json 버전이 일치해야 합니다. (`v1.0.1` 또는 `1.0.1` 형식 모두 지원)
+## 라이선스
 
----
-
-## 썸네일 이미지
-
-VPM 프론트엔드에 표시될 썸네일을 설정할 수 있습니다.
-
-### 방법 1: 패키지 내 썸네일 (권장)
-```
-Packages/<PACKAGE_ID>/package-media/thumbnail.png
-```
-
-### 방법 2: 저장소 루트 썸네일
-```
-.github/vpm-thumbnail.png
-```
-
-**권장 사양:**
-- 형식: PNG
-- 크기: 512x512 또는 16:9 비율
-- 용량: 500KB 이하
-
----
-
-## 워크플로우 구조
-
-### Reusable Workflow (중앙 관리)
-
-모든 패키지 레포가 `vpm-package-template`의 워크플로우를 참조합니다.
-중앙 워크플로우를 수정하면 **모든 패키지 레포에 자동 적용**됩니다.
-
-```
-vpm-package-template/.github/workflows/
-├── vpm-release.yml    # 재사용 가능한 워크플로우 (실제 로직)
-└── release.yml        # 호출 예시
-
-각 패키지 레포/.github/workflows/
-└── release.yml        # 중앙 워크플로우 호출 (16줄)
-```
-
-### 각 패키지 레포의 release.yml
-
-```yaml
-name: Build Release
-
-on:
-  workflow_dispatch:
-  push:
-    tags:
-      - '*'
-
-permissions:
-  contents: write
-
-jobs:
-  release:
-    uses: kibalab/vpm-package-template/.github/workflows/vpm-release.yml@main
-    with:
-      package_name: ${{ vars.PACKAGE_NAME }}
-      vpm_backend_url: ${{ vars.VPM_BACKEND_URL || 'https://vpm.kiba.red' }}
-    secrets:
-      VPM_API_KEY: ${{ secrets.VPM_API_KEY }}
-```
-
-### 워크플로우 동작
-
-1. **빌드**
-   - `Packages/<PACKAGE_NAME>` 폴더를 ZIP으로 압축
-   - `.unitypackage` 파일 생성
-
-2. **GitHub Release 생성**
-   - ZIP, unitypackage, package.json 첨부
-
-3. **VPM 백엔드 등록**
-   - 패키지 정보를 백엔드 API로 전송
-   - 썸네일 URL 자동 감지 및 등록
-
----
-
-## 문제 해결
-
-### 워크플로우 실패: "Tag does not match version"
-- `package.json`의 `version`과 Git 태그가 일치하는지 확인
-- 태그는 `1.0.0` 또는 `v1.0.0` 형식 모두 가능
-
-### 패키지가 목록에 표시되지 않음
-- GitHub Actions 로그에서 백엔드 응답 확인
-- `VPM_BACKEND_URL`과 `VPM_API_KEY` 설정 확인
-- 백엔드 관리자에게 API 키 유효성 문의
-
-### 썸네일이 표시되지 않음
-- 파일 경로가 정확한지 확인
-- 이미지가 `main` 브랜치에 푸시되어 있는지 확인
-- Raw URL 접근 가능 여부 확인
-
----
-
-## 관련 링크
-
-- [VPM 패키지 목록](https://vpm.kiba.red)
-- [VCC에 추가하기](https://vpm.kiba.red/vcc)
+MIT

@@ -1,0 +1,27 @@
+{
+  "name": "com.kibalab.guielement",
+  "displayName": "GUIElement",
+  "version": "0.1.0",
+  "unity": "2021.3",
+  "description": "Small editor-only IMGUI utility elements for Unity editor tooling.",
+  "keywords": [
+    "editor",
+    "imgui",
+    "gui",
+    "utility"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kibalab/GUIElement.git"
+  },
+  "documentationUrl": "https://github.com/kibalab/GUIElement#readme",
+  "changelogUrl": "https://github.com/kibalab/GUIElement/blob/main/Packages/com.kibalab.guielement/CHANGELOG.md",
+  "licensesUrl": "https://github.com/kibalab/GUIElement/blob/main/LICENSE",
+  "vpmDependencies": {},
+  "author": {
+    "name": "KIBA",
+    "email": "root@kiba.red",
+    "url": "https://vpm.kiba.red/"
+  }
+}

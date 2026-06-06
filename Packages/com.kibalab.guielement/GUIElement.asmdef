@@ -1,12 +1,13 @@
 {
-    "name": "VRChatPackageTemplate.Editor",
+    "name": "GUIElement",
+    "rootNamespace": "KIBA_.GUIElement.Editor",
     "references": [],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": false,
+    "overrideReferences": true,
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
