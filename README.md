@@ -73,11 +73,15 @@ public sealed class ExampleWindow : EditorWindow
 
 ## 릴리스
 
-`package.json`의 `version`과 Git 태그가 일치해야 합니다.
+`main`은 개발 브랜치입니다. `release` 브랜치에 `main`을 반영한 뒤 버전 태그를 푸시하면 배포됩니다. `package.json`의 `version`과 Git 태그가 일치해야 합니다.
 
 ```bash
-git tag 0.1.0
-git push origin 0.1.0
+git switch release
+git pull origin release
+git merge --ff-only origin/main
+git push origin release
+git tag 0.1.1
+git push origin 0.1.1
 ```
 
 ## 라이선스

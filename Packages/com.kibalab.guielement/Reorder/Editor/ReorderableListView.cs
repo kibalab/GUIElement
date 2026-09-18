@@ -13,6 +13,11 @@ namespace KIBA_.GUIElement.Reorder.Editor
         private int _dragSourceIndex = -1;
         private int _dragInsertIndex = -1;
         private readonly float _tailDropZoneHeight;
+        private sealed class DragPayload
+        {
+            internal ReorderableListView Owner;
+            internal int Index;
+        }
 
 
         public ReorderableListView(string dragKey, float tailDropZoneHeight = 22f)
@@ -46,8 +51,9 @@ namespace KIBA_.GUIElement.Reorder.Editor
 
         public void BeginReorderDrag(int index)
         {
+            if (index < 0) return;
             DragAndDrop.PrepareStartDrag();
-            DragAndDrop.SetGenericData(_dragKey, index);
+            DragAndDrop.SetGenericData(_dragKey, new DragPayload { Owner = this, Index = index });
             DragAndDrop.StartDrag("Move Item");
             _dragSourceIndex = index;
         }
@@ -56,13 +62,34 @@ namespace KIBA_.GUIElement.Reorder.Editor
         public void HandleDragAndDrop(Action<int, int> onReorder)
         {
             var e = Event.current;
-            var data = DragAndDrop.GetGenericData(_dragKey);
+            if (e == null) return;
+            var data = DragAndDrop.GetGenericData(_dragKey) as DragPayload;
+            if (data == null || !ReferenceEquals(data.Owner, this))
+            {
+                _dragSourceIndex = _dragInsertIndex = -1;
+                return;
+            }
+            if (data.Index < 0 || data.Index >= _itemRects.Count)
+            {
+                ClearDragState();
+                return;
+            }
+            if (e.type == EventType.DragExited)
+            {
+                ClearDragState();
+                return;
+            }
+            if (!ContainsDropPosition(e.mousePosition))
+            {
+                _dragInsertIndex = -1;
+                return;
+            }
 
 
-            if ((e.type == EventType.DragUpdated || e.type == EventType.MouseDrag) && data is int src)
+            if (e.type == EventType.DragUpdated || e.type == EventType.MouseDrag)
             {
                 DragAndDrop.visualMode = DragAndDropVisualMode.Move;
-                _dragSourceIndex = src;
+                _dragSourceIndex = data.Index;
                 _dragInsertIndex = ComputeInsertIndex(e.mousePosition.y);
                 e.Use();
             }
@@ -70,10 +97,11 @@ namespace KIBA_.GUIElement.Reorder.Editor
             {
                 DrawInsertionMarker(_dragInsertIndex);
             }
-            else if (e.type == EventType.DragPerform && data is int src2)
+            else if (e.type == EventType.DragPerform)
             {
                 DragAndDrop.AcceptDrag();
-                int dst = Mathf.Clamp(_dragInsertIndex, 0, _itemRects.Count);
+                var src2 = data.Index;
+                int dst = ComputeInsertIndex(e.mousePosition.y);
                 if (dst > src2) dst -= 1;
                 if (dst != src2 && dst >= 0 && dst <= _itemRects.Count - 1)
                 {
@@ -87,6 +115,20 @@ namespace KIBA_.GUIElement.Reorder.Editor
             {
                 ClearDragState();
             }
+        }
+
+        private bool ContainsDropPosition(Vector2 point)
+        {
+            if (_tailDropRect.Contains(point)) return true;
+            if (_itemRects.Count == 0) return false;
+            var bounds = _itemRects[0];
+            for (var i = 1; i < _itemRects.Count; i++)
+            {
+                var rect = _itemRects[i];
+                bounds = Rect.MinMaxRect(Mathf.Min(bounds.xMin, rect.xMin), Mathf.Min(bounds.yMin, rect.yMin),
+                    Mathf.Max(bounds.xMax, rect.xMax), Mathf.Max(bounds.yMax, rect.yMax));
+            }
+            return bounds.Contains(point);
         }
 
         private int ComputeInsertIndex(float mouseY)
@@ -106,6 +148,7 @@ namespace KIBA_.GUIElement.Reorder.Editor
 
         private void DrawInsertionMarker(int insertIndex)
         {
+            if (_itemRects.Count == 0 || insertIndex < 0) return;
             Rect lineRect;
             if (insertIndex <= 0)
             {
@@ -132,7 +175,8 @@ namespace KIBA_.GUIElement.Reorder.Editor
         {
             _dragSourceIndex = -1;
             _dragInsertIndex = -1;
-            DragAndDrop.SetGenericData(_dragKey, null);
+            if (DragAndDrop.GetGenericData(_dragKey) is DragPayload data && ReferenceEquals(data.Owner, this))
+                DragAndDrop.SetGenericData(_dragKey, null);
         }
     }
 

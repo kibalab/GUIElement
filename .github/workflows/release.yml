@@ -1,7 +1,6 @@
 name: Build Release
 
 on:
-  workflow_dispatch:
   push:
     tags:
       - '*'
@@ -10,7 +9,32 @@ permissions:
   contents: write
 
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    outputs:
+      allowed: ${{ steps.guard.outputs.allowed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Allow only release branch refs
+        id: guard
+        shell: bash
+        run: |
+          git fetch origin +refs/heads/release:refs/remotes/origin/release
+
+          if [[ "${GITHUB_REF}" == refs/tags/* ]] && git merge-base --is-ancestor "${GITHUB_SHA}" "origin/release"; then
+            echo "allowed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Release tags must point to commits contained in origin/release."
+            echo "allowed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   release:
+    needs: guard
+    if: needs.guard.outputs.allowed == 'true'
     uses: kibalab/vpm-package-template/.github/workflows/vpm-release.yml@main
     with:
       package_name: ${{ vars.PACKAGE_NAME || 'com.kibalab.guielement' }}

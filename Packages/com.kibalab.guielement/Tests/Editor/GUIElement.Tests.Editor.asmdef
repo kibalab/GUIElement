@@ -1,0 +1,7 @@
+{
+    "name": "GUIElement.Tests.Editor",
+    "references": ["GUIElement"],
+    "includePlatforms": ["Editor"],
+    "optionalUnityReferences": ["TestAssemblies"],
+    "autoReferenced": false
+}

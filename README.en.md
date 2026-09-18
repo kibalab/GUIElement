@@ -73,11 +73,15 @@ Before publishing, confirm these GitHub repository settings:
 
 ## Releasing
 
-The Git tag must match `package.json`'s `version`.
+Use `main` for development. Update `release` from `main`, then push a version tag on the release commit to publish. The Git tag must match `package.json`'s `version`.
 
 ```bash
-git tag 0.1.0
-git push origin 0.1.0
+git switch release
+git pull origin release
+git merge --ff-only origin/main
+git push origin release
+git tag 0.1.1
+git push origin 0.1.1
 ```
 
 ## License

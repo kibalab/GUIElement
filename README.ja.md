@@ -73,11 +73,15 @@ public sealed class ExampleWindow : EditorWindow
 
 ## リリース
 
-Git タグは `package.json` の `version` と一致している必要があります。
+`main` は開発用ブランチです。`release` に `main` を反映し、そのコミットにバージョンタグを付けてプッシュすると配布されます。Git タグは `package.json` の `version` と一致している必要があります。
 
 ```bash
-git tag 0.1.0
-git push origin 0.1.0
+git switch release
+git pull origin release
+git merge --ff-only origin/main
+git push origin release
+git tag 0.1.1
+git push origin 0.1.1
 ```
 
 ## ライセンス
